@@ -10,6 +10,7 @@ import { capitalize, pad, padLeft } from "./utils/string.formatter.js";
 import { sleep } from "./utils/sleep.js";
 // import { Deck } from "./model/deck.js";
 import { Card, Color, Rank, Suit } from "./model/card.js";
+import tgio from "terminal-game-io";
 
 // const spinner = createSpinner();
 // const text_welcome = "Welcome"
@@ -49,6 +50,9 @@ class Game {
                 case "howto":
                     await this.howTo();
                     break;
+                case "test":
+                    await this.test();
+                    break;
                 case "quit":
                     await this.quit();
                     break;
@@ -63,28 +67,90 @@ class Game {
     quit(): void {
         this.end = true;
     }
+//` ◇   ◇   ◇  J O K E R      ❖          ◇          ◇          ❖      J O K E R  ◇   ◇   ◇ `
+//` J          O   ❖      K  ◇ ◇     E       J  R       O     ◇ ◇  K      ❖   E          R 
+    test(): void {
+        [
+            chalk.bgWhite.red.bold(` J         `),
+            chalk.bgWhite.red.bold(` O   ❖     `),
+            chalk.bgWhite.red.bold(` K  ◇ ◇    `),
+            chalk.bgWhite.red.bold(` E       J `),
+            chalk.bgWhite.red.bold(` R       O `),
+            chalk.bgWhite.red.bold(`    ◇ ◇  K `),
+            chalk.bgWhite.red.bold(`     ❖   E `),
+            chalk.bgWhite.red.bold(`         R `),
+        ].forEach( (line: string) => {
+            console.log(line);
+        });
+        this.goTo("menu");
+    }
+
+
 
     async menu(): Promise<void> {
         const choice = await inquirer.prompt([{
             type: "list",
             name: "Menu",
             message: "",
-            choices: [ "Play", "How to Play", "Quit" ]
+            choices: [ "Play", "How to Play", "Test", "Quit" ]
         }]);
         switch (choice["Menu"]) {
             case "Play":
-                this.state = "play";
+                this.goTo("play");
                 break;
             case "How to Play":
-                this.state = "howto"
+                this.goTo("howto");
+                break;
+            case "Test":
+                this.goTo("test");
                 break;
             case "Quit":
-                this.state = "quit";
+                this.goTo("quit");
                 break;
         }
     }
 
     async play(): Promise<void> {
+        const key = tgio.Key;
+        const FPS = 1;
+        const [BOARD_WIDTH, BOARD_HEIGHT] = process.stdout.getWindowSize();
+
+        let posX = Math.round(BOARD_WIDTH / 2);
+        let posY = Math.round(BOARD_HEIGHT / 2);
+        const frameHandler = (instance: tgio.ITerminalGameIo) => {
+            let frameData = "";
+            for (let y = 0; y < BOARD_HEIGHT; y++) {
+                for (let x = 0; x < BOARD_WIDTH; x++) {
+                    frameData += posX === x && posY === y? "@" : " ";
+                }
+            } instance.drawFrame(frameData, BOARD_WIDTH, BOARD_HEIGHT);
+        };
+
+        const keypressHandler = (instance: tgio.ITerminalGameIo, keyName: tgio.KeyName) => {
+            switch (keyName) {
+                case key.ArrowUp:
+                    posY = posY === 0? BOARD_HEIGHT - 1: posY - 1;
+                    break;
+                case key.ArrowDown:
+                    posY = (posY + 1) % BOARD_HEIGHT;
+                    break;
+                case key.ArrowRight:
+                    posX = (posX + 1) % BOARD_WIDTH;
+                    break;
+                case key.ArrowLeft:
+                    posX = posX === 0? BOARD_WIDTH - 1 : posX - 1 ;
+                    break;
+                case key.Escape:
+                    instance.exit();
+                    break;
+            } frameHandler(instance);
+        };
+
+        const terminalGame = tgio.createTerminalGameIo({
+            fps: FPS,
+            frameHandler,
+            keypressHandler,
+        });
         // process.stdout.write("Hello World!");
         // await sleep(2000);
         // process.stdout.clearLine(0);
@@ -93,6 +159,7 @@ class Game {
         // await sleep(2000);
         // process.stdout.clearLine(0);
         // process.stdout.cursorTo(0);
+        process.stdout.write('\x1bc');
         this.goTo("menu");
     }
 
@@ -159,7 +226,7 @@ class Game {
             console.log(paragraph + line + "\n");
             await sleep(500);
         }
-        this.state = "menu";
+        this.goTo("menu");
     }
 }
 

@@ -1,5 +1,6 @@
 import chalk from "chalk";
 import { normalize, pad } from "../utils/string.formatter.js";
+import { createCardCorner, createCenterString, prettySplit, splitInHalf } from "../utils/misc.js";
 
 enum Suit {
     HEARTS = "♥",
@@ -7,16 +8,6 @@ enum Suit {
     DIAMONDS = "♦",
     CLUBS = "♣",
 }
-
-// const Suit = {
-//     HEARTS: "♥",
-//     SPADES: "♠",
-//     DIAMONDS: "♦",
-//     CLUBS: "♣",
-// } as const;
-// type Suit = typeof Suit;
-// type SuitKey = keyof Suit;
-// type SuitValue = Suit[SuitKey];
 
 enum Rank {
     Joker = 0,
@@ -55,15 +46,15 @@ function getSuitName(suit: Suit) {
 
 
 class Card {
-    #suit: Suit | null;
-    #rank: Rank;
-    #color: Color;
+    private suit: Suit | null;
+    private rank: Rank;
+    private color: Color;
     private hidden: boolean;
 
     constructor(rank: Rank = Rank.Joker, suit: Suit, color: Color = Color.BLACK, isHidden: boolean = false) {
-        this.#rank = rank;
-        this.#suit = ([Rank.Joker].includes(rank))? null : suit;
-        this.#color =
+        this.rank = rank;
+        this.suit = ([Rank.Joker].includes(rank))? null : suit;
+        this.color =
             (rank === Rank.Joker)
             ? color
             : ([Suit.CLUBS, Suit.SPADES].includes(suit))
@@ -72,16 +63,16 @@ class Card {
         this.hidden = isHidden;
     }
 
-    get suit(): Suit | null {
-        return this.#suit;
+    get getSuit(): Suit | null {
+        return this.suit;
     }
 
-    get rank(): Rank {
-        return this.#rank;
+    get getRank(): Rank {
+        return this.rank;
     }
 
-    get color(): Color {
-        return this.#color;
+    get getColor(): Color {
+        return this.color;
     }
 
     get isHidden(): boolean {
@@ -98,17 +89,17 @@ class Card {
 
     toString(): string {
         if (this.isHidden) return `(?)Unknown`;
-        return `${this.#suit}${this.#rank}`;
+        return `${this.suit}${this.rank}`;
     }
 
     toLongString(): string {
         if (this.isHidden) return `Unknown of Unknown`;
-        const suitExists: boolean = !!this.#suit;
-        const colorName: string = normalize(getColorName(this.#color));
-        const rankName: string = normalize(getRankName(this.#rank));
+        const suitExists: boolean = !!this.suit;
+        const colorName: string = normalize(getColorName(this.color));
+        const rankName: string = normalize(getRankName(this.rank));
         const suitName: string =
             suitExists?
-                normalize(getSuitName(this.#suit!)) : "";
+                normalize(getSuitName(this.suit!)) : "";
 
         if (suitExists) return `${rankName} of ${suitName}`;
         return `${colorName} ${rankName}`;
@@ -117,7 +108,7 @@ class Card {
     toColoredString(): string {
         if (this.isHidden) return chalk.bgWhite(pad(`Unknown`));
         const string = pad(this.toLongString());
-        if (this.#color === Color.BLACK) return chalk.bgWhite(string);
+        if (this.color === Color.BLACK) return chalk.bgWhite(string);
         else return chalk.bgRed.white(string);
     }
 
@@ -125,15 +116,15 @@ class Card {
         if (this.isHidden)
             return chalk.bgWhite.black.bold(" ? ")
                 + chalk.bgBlack.white.bold(" Unknown ");
-        if (!this.#suit)
+        if (!this.suit)
             return (
-                this.#color === Color.BLACK?
-                    chalk.bgWhite.black(` ${getRankName(this.#rank)} `)
-                :   chalk.bgRed.white(` ${getRankName(this.#rank)} `)
+                this.color === Color.BLACK?
+                    chalk.bgWhite.black(` ${getRankName(this.rank)} `)
+                :   chalk.bgRed.white(` ${getRankName(this.rank)} `)
             );
-        let firstHalf = chalk.bold(pad(this.#suit));
-        let secondHalf = chalk.bold(pad(getRankName(this.#rank)));
-        switch (this.#suit) {
+        let firstHalf = chalk.bold(pad(this.suit));
+        let secondHalf = chalk.bold(pad(getRankName(this.rank)));
+        switch (this.suit) {
             case Suit.CLUBS:
                 firstHalf = chalk
                     .bgWhite.black(firstHalf);
@@ -160,6 +151,52 @@ class Card {
                 break;
         } return firstHalf + secondHalf;
     }
+
+    // TODO finish
+    toArt(): string[] {
+        [" 10        ",
+         " ♥         ",
+         "    ♥ ♥    ",
+         "   ♥ ♥ ♥   ",
+         "   ♥ ♥ ♥   ",
+         "    ♥ ♥    ",
+         "         ♥ ",
+         "        10 ",]
+
+        return [];
+    }
+
+    // TODO finish
+    createPattern(): string[] {
+        const SPECIAL_RANKS =
+            [Rank.Joker,Rank.Ace, Rank.King, Rank.Queen, Rank.Jack];
+        if (this.rank in SPECIAL_RANKS) return this.createPatternSpecial();
+        let pattern: string[] = prettySplit(this.suit!.repeat(this.rank));
+        if (pattern.length < 4) [`.`]
+        pattern.forEach( (line: string) => {
+            line = createCenterString(line);
+        });
+        pattern = [...createCardCorner(this.rank, this.suit!), ...pattern, ...createCardCorner(this.rank, this.suit!, true)];
+        return [];
+    }
+
+    // TODO Create pattern for special cards
+    createPatternSpecial(): string[] {
+        switch (this.rank) {
+            case Rank.Joker:
+                break;
+        } return [];
+    }
 }
+
+
+[" J         ",
+ " O   ❖     ",
+ " K  ◇ ◇    ",
+ " E       J ",
+ " R       O ",
+ "    ◇ ◇  K ",
+ "     ❖   E ",
+ "         R ",]
 
 export { Card, Rank, Suit, Color };

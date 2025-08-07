@@ -24,3 +24,13 @@ export function normalize(text: string): string {
     words.forEach( (word: string) => word = capitalize(word) )
     return words.join(" ");
 }
+
+export function buildCardLine(symbols: string, index: number, lineSize: number = 11) {
+    const size = symbols.length;
+    let result =
+        symbols
+            .padStart(index + symbols.length + 1)
+            .padEnd(11)
+            .substring(0, lineSize);
+    return result;
+}
